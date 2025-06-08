@@ -16,7 +16,7 @@ st.write("Unggah file audio (.wav, .mp3, .m4a), dan AI akan menganalisis genreny
 @st.cache_resource
 def load_model():
     try:
-        model_path = "/content/drive/MyDrive/AI/Trained_model.h5"
+        model_path = "Trained_model.h5"
         model = tf.keras.models.load_model(model_path)
         return model
     except Exception as e:
