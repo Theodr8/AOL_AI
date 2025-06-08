@@ -27,14 +27,21 @@ def load_model():
 genre = ['disco', 'metal', 'reggae', 'blues', 'rock', 'classical', 'jazz', 'hiphop', 'country', 'pop']
 
 # --- Preprocessing Audio ---
+# --- Preprocessing Audio ---
 def load_and_preprocess_data(file_path, target_shape=(150, 150)):
-    data = []
+
     try:
+        # Muat file audio dengan engine 'soundfile' untuk keandalan
         audio_data, sample_rate = librosa.load(file_path, sr=None)
     except Exception as e:
-        st.error(f"Error loading audio: {e}")
-        return np.array(data)
+        st.error(f"Gagal memuat file audio. Pastikan formatnya didukung (WAV, MP3, M4A). Error: {e}")
+        return None # Kembalikan None jika gagal
 
+    if len(audio_data) == 0:
+        st.error("File audio kosong atau tidak dapat dibaca.")
+        return None # Kembalikan None jika audio kosong
+
+    data = []
     chunk_duration = 4
     overlap_duration = 2
     chunk_samples = int(chunk_duration * sample_rate)
@@ -49,6 +56,10 @@ def load_and_preprocess_data(file_path, target_shape=(150, 150)):
         start = i * (chunk_samples - overlap_samples)
         end = start + chunk_samples
         chunk = audio_data[start:min(end, len(audio_data))]
+        if len(chunk) < chunk_samples:
+            # Lakukan padding jika chunk terakhir lebih pendek
+            chunk = np.pad(chunk, (0, chunk_samples - len(chunk)), 'constant')
+
         if len(chunk) == 0:
             continue
         try:
@@ -60,8 +71,13 @@ def load_and_preprocess_data(file_path, target_shape=(150, 150)):
             mel_resized = resize(mel_spectrogram, target_shape)
             data.append(mel_resized)
         except Exception as e:
-            st.warning(f"Chunk {i} gagal: {e}")
+            st.warning(f"Chunk {i} gagal diproses: {e}")
             continue
+
+    if not data:
+        st.error("Tidak ada data yang dapat diproses dari file audio.")
+        return None # Kembalikan None jika tidak ada chunk yang berhasil
+
     return np.array(data)
 
 # --- Prediksi Genre ---
